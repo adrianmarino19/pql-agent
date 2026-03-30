@@ -1,6 +1,6 @@
 # PQL Agent — Build Checklist
 
-Use this file as the execution tracker for the PQL assistant.  
+Use this file as the execution tracker for the PQL assistant.
 Mark tasks as done when completed.
 
 ## Goal
@@ -26,8 +26,6 @@ Mark tasks as done when completed.
 - [x] Restrict discovery to PQL pages only.
 - [x] Include `comments.html` in scope.
 - [x] Add retry/backoff and failure capture per page.
-- [ ] Add optional raw HTML archival (`data/raw/`) for reproducible parsing.
-- [ ] Add robots.txt / crawl-policy verification step.
 
 ### 2) Content Cleanup and Normalization
 
@@ -37,22 +35,22 @@ Mark tasks as done when completed.
   - `Search results`, `No results found`
   - feedback block
 - [x] Normalize content to single-line text (no `\n` in stored `full_content`).
-- [ ] Add optional `cleaned_markdown` output for chunking readability.
 
 ### 3) Structured Outputs
 
 - [x] Write JSONL with metadata fields:
   - `url`, `source`, `position`, `status_code`, `fetched_at_utc`
   - `title`, `full_content`, `content_hash_sha256`, `word_count`, `error`
-- [ ] Define and freeze v1 schema contract in code comments/docs.
 - [ ] Add schema validation check before writing output.
 
 ### 4) Chunking
 
-- [ ] Implement chunker module (`function/section` oriented, not fixed-size only).
-- [ ] Keep syntax/examples together where possible.
+- [ ] Implement chunker module — chunk by function or concept, not fixed token window alone.
+- [ ] Keep syntax blocks and examples together within the same chunk.
 - [ ] Add chunk metadata:
-  - `chunk_id`, `url`, `title`, `section_type`, `function_name` (if detectable)
+  - `chunk_id`, `url`, `title`, `function_name` (if detectable)
+  - `category`, `doc_version`
+  - `section_type`: one of `syntax`, `parameter`, `example`, `note`
 - [ ] Export chunk JSONL for embedding pipeline.
 
 ### 5) Embedding + Vector Store
@@ -69,8 +67,14 @@ Mark tasks as done when completed.
 - [ ] Implement retriever module: query embed -> Chroma similarity search.
 - [ ] Return top-k chunks + chunk metadata.
 - [ ] Add tuning knobs (`k`, score threshold).
+- [ ] Add keyword fallback for exact function name matches (via Chroma `where` filters on `function_name` metadata).
 
-### 2) Prompting + Generation
+### 2) CLI runtime (before UI)
+
+- [ ] Build CLI script: takes a natural-language question, prints structured response.
+- [ ] Use CLI to iterate on prompt and retrieval quality before building UI.
+
+### 3) Prompting + Generation
 
 - [ ] Implement prompt builder with strict grounding instructions.
 - [ ] Require output contract:
@@ -81,16 +85,23 @@ Mark tasks as done when completed.
   - `cited_chunks`
 - [ ] Integrate OpenAI chat model call.
 
-### 3) Validation Layer
+### 4) Schema Context Input
+
+- [ ] Allow user to provide table/column schema as input (e.g. paste schema text).
+- [ ] Inject schema context into prompt alongside retrieved chunks.
+- [ ] When schema is missing and required, surface it in `missing_context`.
+
+### 5) Validation Layer
 
 - [ ] Add lightweight response checks:
   - non-empty query
   - output format valid
   - cited chunks present
+  - referenced functions appear in retrieved docs
   - flag unresolved placeholders
 - [ ] Add warning path when context is insufficient.
 
-### 4) UI
+### 6) UI
 
 - [ ] Build Streamlit app for ask -> retrieve -> generate flow.
 - [ ] Show generated query + explanation + assumptions.
@@ -100,12 +111,13 @@ Mark tasks as done when completed.
 
 ### 1) Logging
 
-- [ ] Add query logging sink (Google Sheets initially).
+- [ ] Add query logging sink (local JSONL or SQLite).
 - [ ] Log fields:
   - `timestamp`, `session_id`, `question`
-  - `retrieved_chunk_ids`, `generated_query`
+  - `retrieved_chunk_ids`, `retrieval_titles`, `generated_query`
   - `assumptions`, `missing_context`
   - `model`, `validation_status`
+  - `user_feedback` (optional thumbs up/down)
 
 ### 2) Evaluation
 
@@ -120,14 +132,13 @@ Mark tasks as done when completed.
 
 - [ ] Improve chunking based on observed failures.
 - [ ] Add few-shot examples for high-frequency intents.
+- [ ] Add hybrid search (dense + keyword) if pure semantic search feels noisy.
 - [ ] Add syntax-aware validator (later stage).
 - [ ] Consider fine-tuning only after enough high-quality logs.
 
 ## Environment Checklist
 
 - [ ] `OPENAI_API_KEY` configured
-- [ ] `GOOGLE_SHEETS_CREDENTIALS_JSON` configured
-- [ ] `GOOGLE_SHEET_ID` configured
 
 ## Runbook (Current)
 
@@ -139,5 +150,5 @@ python scripts/scrape_docs.py
 
 - [ ] Build chunk dataset
 - [ ] Build embeddings/vector store
-- [ ] Launch runtime app
-
+- [ ] Launch CLI runtime
+- [ ] Launch Streamlit app

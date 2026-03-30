@@ -26,6 +26,7 @@ Mark tasks as done when completed.
 - [x] Restrict discovery to PQL pages only.
 - [x] Include `comments.html` in scope.
 - [x] Add retry/backoff and failure capture per page.
+- [x] Add optional raw HTML archival (`--raw-dir`, saves `<content_hash>.html` per page).
 
 ### 2) Content Cleanup and Normalization
 

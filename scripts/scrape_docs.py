@@ -280,12 +280,18 @@ def fetch_url_with_retries(
     raise last_exc
 
 
+def save_raw_html(raw_dir: Path, content_hash: str, html: str) -> None:
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    (raw_dir / f"{content_hash}.html").write_text(html, encoding="utf-8")
+
+
 def process_page(
     position: int,
     url: str,
     timeout: float,
     delay: float,
     user_agent: str,
+    raw_dir: Path | None = None,
 ) -> PageRecord:
     fetched_at = now_utc_iso()
     if delay > 0:
@@ -295,6 +301,8 @@ def process_page(
         title, full_content = extract_full_content(response.text)
         content_hash = hashlib.sha256(full_content.encode("utf-8")).hexdigest()
         word_count = len(full_content.split())
+        if raw_dir is not None:
+            save_raw_html(raw_dir, content_hash, response.text)
         return PageRecord(
             url=url,
             source="root_sidebar",
@@ -333,6 +341,7 @@ def run_scrape(
     max_pages: int | None,
     user_agent: str,
     workers: int,
+    raw_dir: Path | None = None,
 ) -> None:
     print(f"Fetching root page: {start_url}")
     root_response = fetch_url_with_retries(url=start_url, timeout=timeout, user_agent=user_agent)
@@ -363,7 +372,7 @@ def run_scrape(
 
     with ThreadPoolExecutor(max_workers=workers) as executor:
         future_to_page = {
-            executor.submit(process_page, position, url, timeout, delay, user_agent): (position, url)
+            executor.submit(process_page, position, url, timeout, delay, user_agent, raw_dir): (position, url)
             for position, url in enumerate(sidebar_urls, start=1)
         }
         completed = 0
@@ -440,6 +449,11 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_WORKERS,
         help="Number of parallel workers for page fetch/extract.",
     )
+    parser.add_argument(
+        "--raw-dir",
+        default=None,
+        help="Optional directory to archive raw HTML per page (e.g. data/raw/). Filename is <content_hash>.html.",
+    )
     return parser.parse_args()
 
 
@@ -454,6 +468,7 @@ def main() -> None:
         max_pages=args.max_pages,
         user_agent=args.user_agent,
         workers=args.workers,
+        raw_dir=Path(args.raw_dir) if args.raw_dir else None,
     )
 
 

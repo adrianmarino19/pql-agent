@@ -16,6 +16,9 @@ Useful options:
 
 ```bash
 python scripts/scrape_docs.py --out data/scrape/pql_docs.jsonl --workers 8 --delay 0.1 --timeout 20 --max-pages 10
+
+# Also archive raw HTML for reproducible re-parsing:
+python scripts/scrape_docs.py --raw-dir data/raw/
 ```
 
 Each JSONL record includes:

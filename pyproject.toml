@@ -1,7 +1,10 @@
 [project]
 name = "pql-agent"
 version = "0.1.0"
-description = "Add your description here"
+description = "Celonis Helper"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+  "beautifulsoup4>=4.12.3",
+  "requests>=2.31.0",
+]

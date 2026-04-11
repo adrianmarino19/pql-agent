@@ -54,7 +54,7 @@ chunks by function / concept / syntax block
     |
     v
 Metadata enricher
-adds title, function name, category, source URL/path, version
+adds title, term name, category, source URL/path, version
     |
     v
 Embeddings
@@ -71,7 +71,7 @@ Each chunk should carry metadata such as:
 
 - `chunk_id`
 - `title`
-- `function_name` if applicable
+- `term_name` if applicable
 - `category`
 - `source_path` or canonical doc URL
 - `doc_version`

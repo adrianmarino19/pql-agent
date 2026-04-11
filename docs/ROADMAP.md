@@ -52,7 +52,7 @@ Mark tasks as done when completed.
   - [x] PQL dictionary normalization: `MATCH_PROCESS_REGEX` → `match process regex` before embedding (improves tokenization).
   - [x] Concept pages (no `Syntax` block) → single `chunk_type: concept`.
   - [x] Sequential marker validation to skip false positives (`[1904]` inside example text).
-  - [x] Chunk metadata: `chunk_id` (SHA256 hash of url+chunk_type+example_index), `url`, `title`, `chunk_type`, `example_index`, `word_count`, `token_count`, `text`.
+  - [x] Chunk metadata: `chunk_id` (SHA256 hash of url+chunk_type+example_index), `url`, `title`, `term_name`, `chunk_type`, `example_index`, `word_count`, `token_count`, `text`.
   - Result: **598 chunks** from 291 pages (65 concept, 188 full, 38 description_syntax, 307 example).
 
 ### 5) Embedding + Vector Store
@@ -74,7 +74,7 @@ Mark tasks as done when completed.
 - [ ] Implement retriever module: query embed -> Chroma similarity search.
 - [ ] Return top-k chunks + chunk metadata.
 - [ ] Add tuning knobs (`k`, score threshold).
-- [ ] Add keyword fallback for exact function name matches (via Chroma `where` filters on `function_name` metadata).
+- [ ] Add keyword fallback for exact PQL term matches (via Chroma `where` filters on `term_name` metadata).
 
 ### 2) CLI runtime (before UI)
 

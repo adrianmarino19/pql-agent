@@ -156,6 +156,7 @@ Every chunk, regardless of tier or type, must carry:
 | `chunk_id` | `str` | Stable hash of `url + chunk_type + example_index` |
 | `url` | `str` | Source page URL (for citation) |
 | `title` | `str` | Page title / function name |
+| `term_name` | `str \| null` | Canonical named PQL term for the page, derived from `Syntax` first and strict title fallback second |
 | `chunk_type` | `str` | `full` \| `description_syntax` \| `example` \| `concept` |
 | `example_index` | `int \| null` | Which `[n]` block; `null` for non-example chunks |
 | `word_count` | `int` | Word count of the chunk text |
@@ -173,5 +174,5 @@ Every chunk, regardless of tier or type, must carry:
   and no sibling chunks need to be fetched.
 
 For v1, plain vector search is sufficient. For v2, hybrid retrieval (dense +
-keyword match on `title` / `function_name` metadata) will improve precision for
+keyword match on `title` / `term_name` metadata) will improve precision for
 exact function name lookups, which is the dominant user intent in this corpus.

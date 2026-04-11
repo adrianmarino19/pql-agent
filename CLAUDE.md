@@ -38,7 +38,7 @@ The system has three planned loops (only ingestion phase 1 is implemented):
 
 ### Planned Structure (from docs/ARCHITECTURE.md)
 
-Code will be organized under `src/pql_agent/` with separate packages for `ingest/`, `runtime/`, `app/`, and `logging/`. The runtime must return structured output: `query`, `explanation`, `assumptions`, `missing_context`, `cited_chunks`.
+Code will be organized under `src/pql_agent/` with separate packages for `ingest/`, `runtime/`, `app/`, and `logging/`. The runtime must return structured output: `query`, `explanation`, `assumptions`, `missing_context`, `cited_chunks`. Chunk metadata now includes `term_name` for named PQL constructs when derivable from syntax or a strict title heuristic.
 
 ### Design Constraints
 

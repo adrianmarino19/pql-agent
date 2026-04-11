@@ -43,11 +43,43 @@ def extract_syntax_signature(content: str, title: str) -> str | None:
     return m.group(1).strip() if m else None
 
 
-def _make_chunk(url: str, title: str, chunk_type: str, text: str, example_index=None) -> dict:
+def extract_syntax_term(content: str) -> str | None:
+    """Extract the leading named term from the Syntax block, if present."""
+    m = re.search(r'\bSyntax\s+([A-Z][A-Z0-9_]*)\b', content)
+    return m.group(1).strip() if m else None
+
+
+def title_looks_like_term(title: str) -> bool:
+    """Return True when a title looks like a named PQL term, not prose."""
+    cleaned = title.strip()
+    if not cleaned or " " in cleaned:
+        return False
+    return bool(re.fullmatch(r'[A-Z][A-Z0-9_]*', cleaned))
+
+
+def derive_term_name(title: str, content: str) -> str | None:
+    """Derive a canonical PQL term from syntax first, then strict title fallback."""
+    syntax_term = extract_syntax_term(content)
+    if syntax_term:
+        return syntax_term
+    if title_looks_like_term(title):
+        return title.strip()
+    return None
+
+
+def _make_chunk(
+    url: str,
+    title: str,
+    term_name: str | None,
+    chunk_type: str,
+    text: str,
+    example_index=None,
+) -> dict:
     return {
         "chunk_id": chunk_id(url, chunk_type, example_index),
         "url": url,
         "title": title,
+        "term_name": term_name,
         "chunk_type": chunk_type,
         "example_index": example_index,
         "word_count": len(text.split()),
@@ -60,6 +92,7 @@ def chunk_page(doc: dict, pql_dict: set[str]) -> list[dict]:
     url = doc["url"]
     title = doc.get("title", "")
     raw_content = doc.get("full_content", "")
+    term_name = derive_term_name(title, raw_content)
 
     has_syntax = bool(re.search(r'\bSyntax\b', raw_content))
     has_examples = bool(re.search(r'\[1\]', raw_content))
@@ -67,15 +100,15 @@ def chunk_page(doc: dict, pql_dict: set[str]) -> list[dict]:
 
     # Concept page: no Syntax block (prose guide, any tier)
     if not has_syntax:
-        return [_make_chunk(url, title, "concept", normalize_pql(raw_content, pql_dict))]
+        return [_make_chunk(url, title, term_name, "concept", normalize_pql(raw_content, pql_dict))]
 
     # Tier 1 & 2: keep as single full chunk
     if n_tokens <= TIER3_MIN:
-        return [_make_chunk(url, title, "full", normalize_pql(raw_content, pql_dict))]
+        return [_make_chunk(url, title, term_name, "full", normalize_pql(raw_content, pql_dict))]
 
     # Tier 3 with no example blocks: can't split, keep as full
     if not has_examples:
-        return [_make_chunk(url, title, "full", normalize_pql(raw_content, pql_dict))]
+        return [_make_chunk(url, title, term_name, "full", normalize_pql(raw_content, pql_dict))]
 
     # Tier 3 with example blocks: split on [n] markers
     syntax_sig = extract_syntax_signature(raw_content, title)
@@ -93,17 +126,17 @@ def chunk_page(doc: dict, pql_dict: set[str]) -> list[dict]:
             expected += 1
 
     if not seq_markers:
-        return [_make_chunk(url, title, "full", normalize_pql(raw_content, pql_dict))]
+        return [_make_chunk(url, title, term_name, "full", normalize_pql(raw_content, pql_dict))]
 
     chunks = []
 
     desc_text = normalize_pql(raw_content[: seq_markers[0][0]].strip(), pql_dict)
-    chunks.append(_make_chunk(url, title, "description_syntax", desc_text))
+    chunks.append(_make_chunk(url, title, term_name, "description_syntax", desc_text))
 
     for i, (start, _end, idx) in enumerate(seq_markers):
         next_start = seq_markers[i + 1][0] if i + 1 < len(seq_markers) else len(raw_content)
         ex_text = normalize_pql(raw_content[start:next_start].strip(), pql_dict)
         full_ex = f"{prefix}\n\n{ex_text}"
-        chunks.append(_make_chunk(url, title, "example", full_ex, example_index=idx))
+        chunks.append(_make_chunk(url, title, term_name, "example", full_ex, example_index=idx))
 
     return chunks

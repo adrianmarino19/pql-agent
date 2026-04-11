@@ -69,19 +69,23 @@ class PageRecord:
     error: str | None = None
 
     def to_json(self) -> str:
+        """Convert the record to a JSON string."""
         return json.dumps(self.__dict__, ensure_ascii=False)
 
 
 def now_utc_iso() -> str:
+    """Return the current UTC time as an ISO 8601 formatted string."""
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 def canonicalize_url(url: str) -> str:
+    """Normalize a URL by removing fragments and query parameters."""
     parts = urlsplit(url.strip())
     return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
 
 
 def is_allowed_doc_page(url: str) -> bool:
+    """Check if a URL belongs to the target Celonis documentation domain and path."""
     parts = urlsplit(url)
     return (
         parts.scheme in {"http", "https"}
@@ -92,6 +96,7 @@ def is_allowed_doc_page(url: str) -> bool:
 
 
 def unique_in_order(items: Iterable[str]) -> list[str]:
+    """Return a list of unique items preserving their original order."""
     seen: set[str] = set()
     output: list[str] = []
     for item in items:
@@ -103,6 +108,7 @@ def unique_in_order(items: Iterable[str]) -> list[str]:
 
 
 def select_sidebar_container(soup: BeautifulSoup, base_url: str) -> Tag | None:
+    """Find the HTML element containing the sidebar navigation links."""
     selector_candidates = [
         "aside",
         "nav",
@@ -133,6 +139,7 @@ def select_sidebar_container(soup: BeautifulSoup, base_url: str) -> Tag | None:
 
 
 def extract_sidebar_urls(root_html: str, start_url: str) -> list[str]:
+    """Extract all valid documentation URLs from the sidebar of the root page."""
     soup = BeautifulSoup(root_html, "html.parser")
     container = select_sidebar_container(soup, start_url)
     if container is None:
@@ -155,6 +162,7 @@ def extract_sidebar_urls(root_html: str, start_url: str) -> list[str]:
 
 
 def choose_main_content_container(soup: BeautifulSoup) -> Tag:
+    """Identify the main HTML container holding the core documentation content."""
     selector_candidates = [
         "main",
         "article",
@@ -182,6 +190,7 @@ def choose_main_content_container(soup: BeautifulSoup) -> Tag:
 
 
 def clean_text(text: str) -> str:
+    """Normalize whitespace and strip boilerplate from extracted text."""
     text = text.replace("\xa0", " ")
     lines = [line.strip() for line in text.splitlines()]
     lines = [line for line in lines if line]
@@ -192,6 +201,7 @@ def clean_text(text: str) -> str:
 
 
 def strip_boilerplate_lines(lines: list[str]) -> list[str]:
+    """Remove common navigation and feedback text blocks from the content lines."""
     cleaned = list(lines)
 
     while cleaned and cleaned[0] in LEADING_NOISE_LINES:
@@ -209,6 +219,7 @@ def strip_boilerplate_lines(lines: list[str]) -> list[str]:
 
 
 def extract_full_content(html: str) -> tuple[str, str]:
+    """Extract the page title and clean main content from the raw HTML."""
     soup = BeautifulSoup(html, "html.parser")
 
     for element in soup(["script", "style", "noscript", "svg", "iframe"]):
@@ -233,6 +244,7 @@ def extract_full_content(html: str) -> tuple[str, str]:
 
 
 def get_thread_session(user_agent: str) -> requests.Session:
+    """Get or create a thread-local requests Session with the specified user agent."""
     session = getattr(_THREAD_LOCAL, "session", None)
     if session is None:
         session = requests.Session()
@@ -242,6 +254,7 @@ def get_thread_session(user_agent: str) -> requests.Session:
 
 
 def is_retryable_error(exc: Exception) -> bool:
+    """Determine if a network exception should trigger a retry attempt."""
     if isinstance(exc, requests.exceptions.Timeout):
         return True
     if isinstance(exc, requests.exceptions.ConnectionError):
@@ -261,6 +274,7 @@ def fetch_url_with_retries(
     retries: int = RETRY_ATTEMPTS,
     backoff_base_seconds: float = RETRY_BACKOFF_BASE_SECONDS,
 ) -> requests.Response:
+    """Fetch a URL using a thread-local session, retrying on transient errors."""
     last_exc: Exception | None = None
     for attempt in range(1, retries + 1):
         try:
@@ -281,6 +295,7 @@ def fetch_url_with_retries(
 
 
 def save_raw_html(raw_dir: Path, content_hash: str, html: str) -> None:
+    """Save the raw HTML content to disk using its hash as the filename."""
     raw_dir.mkdir(parents=True, exist_ok=True)
     (raw_dir / f"{content_hash}.html").write_text(html, encoding="utf-8")
 
@@ -293,6 +308,7 @@ def process_page(
     user_agent: str,
     raw_dir: Path | None = None,
 ) -> PageRecord:
+    """Fetch, parse, and extract content from a single documentation page."""
     fetched_at = now_utc_iso()
     if delay > 0:
         time.sleep(delay)
@@ -343,6 +359,7 @@ def run_scrape(
     workers: int,
     raw_dir: Path | None = None,
 ) -> None:
+    """Orchestrate the scraping process: discover URLs, fetch concurrently, and save records."""
     print(f"Fetching root page: {start_url}")
     root_response = fetch_url_with_retries(url=start_url, timeout=timeout, user_agent=user_agent)
     sidebar_urls = extract_sidebar_urls(root_response.text, start_url)
@@ -411,6 +428,7 @@ def run_scrape(
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse and return command-line arguments for the scraper."""
     parser = argparse.ArgumentParser(
         description=(
             "Scrape Celonis docs pages discovered from the root page sidebar "
@@ -458,6 +476,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """Entry point for the scraper script."""
     args = parse_args()
     run_scrape(
         start_url=canonicalize_url(args.start_url),

@@ -214,35 +214,33 @@ This log is your evaluation dataset. Without retrieval metadata and validation o
 
 ## Repository Structure
 
-The structure in this document should reflect a realistic near-term repo shape, not an already-finished one. A tighter layout would be:
+For v1, the structure prioritizes simplicity over premature abstraction:
 
 ```text
 pql-agent/
 ├── docs/
-│   └── ARCHITECTURE.md
-├── src/
-│   └── pql_agent/
-│       ├── ingest/
-│       │   ├── chunk.py
-│       │   ├── embed.py
-│       │   └── pipeline.py
-│       ├── runtime/
-│       │   ├── retriever.py
-│       │   ├── prompt.py
-│       │   ├── validator.py
-│       │   └── generate.py
-│       ├── app/
-│       │   └── streamlit_app.py
-│       └── logging/
-│           └── query_logger.py
+│   ├── ARCHITECTURE.md
+│   ├── CHUNKING_STRATEGY.md
+│   ├── ROADMAP.md
+│   └── VECTOR_DB.md
+├── scripts/
+│   ├── scrape_docs.py      # ✓ implemented
+│   ├── chunk.py            # ✓ implemented
+│   ├── embed.py            # ✓ implemented
+│   └── pipeline.py         # ✓ implemented (ingestion orchestrator)
 ├── data/
-│   └── docs/
-├── tests/
+│   ├── scrape/
+│   │   └── pql_docs.jsonl  # ✓ 291 pages, 200 functions
+│   └── chroma/             # ← embeddings persisted here after pipeline.py runs
+├── notebooks/
+│   ├── chunking_analysis.ipynb
+│   └── corpus_analysis.ipynb
 ├── pyproject.toml
-└── README.md
+├── README.md
+└── main.py                 # ← stub; runtime CLI goes here later
 ```
 
-That keeps ingestion, runtime, validation, and app concerns separated from the start.
+This layout keeps ingestion concerns in `scripts/` during the build phase. Runtime code (retriever, prompt, generator, validator) will move into `main.py` or a `scripts/runtime/` module once v1 retrieval is working.
 
 ## Recommended Stack
 

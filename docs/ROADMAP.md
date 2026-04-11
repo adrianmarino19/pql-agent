@@ -15,7 +15,7 @@ Mark tasks as done when completed.
 - [x] Scraper parallelized for speed (`--workers`).
 - [x] Scraper scope fixed to PQL docs only (`taxonomy_celonis_pql`).
 - [x] Scraped text cleanup added (removed nav/feedback boilerplate and `\n` in `full_content`).
-- [ ] Ingestion pipeline (chunk + embed + vector store) not implemented yet.
+- [x] **Ingestion pipeline complete** (chunk + embed + vector store).
 - [ ] Runtime query assistant (retrieval + prompt + generation) not implemented yet.
 
 ## Phase 1 — Ingestion
@@ -46,18 +46,24 @@ Mark tasks as done when completed.
 
 ### 4) Chunking
 
-- [ ] Implement chunker module — chunk by function or concept, not fixed token window alone.
-- [ ] Keep syntax blocks and examples together within the same chunk.
-- [ ] Add chunk metadata:
-  - `chunk_id`, `url`, `title`, `function_name` (if detectable)
-  - `category`, `doc_version`
-  - `section_type`: one of `syntax`, `parameter`, `example`, `note`
-- [ ] Export chunk JSONL for embedding pipeline.
+- [x] **Implement chunker module** (`scripts/chunk.py`):
+  - [x] Three-tier logic: Tier 1/2 (≤2048 tokens) → single `full` chunk; Tier 3 (>2048) → split on sequential `[n]` markers.
+  - [x] Separate `description_syntax` and `example` chunks for Tier 3.
+  - [x] PQL dictionary normalization: `MATCH_PROCESS_REGEX` → `match process regex` before embedding (improves tokenization).
+  - [x] Concept pages (no `Syntax` block) → single `chunk_type: concept`.
+  - [x] Sequential marker validation to skip false positives (`[1904]` inside example text).
+  - [x] Chunk metadata: `chunk_id` (SHA256 hash of url+chunk_type+example_index), `url`, `title`, `chunk_type`, `example_index`, `word_count`, `token_count`, `text`.
+  - Result: **598 chunks** from 291 pages (65 concept, 188 full, 38 description_syntax, 307 example).
 
 ### 5) Embedding + Vector Store
 
-- [ ] Add embedding script (OpenAI embedding model).
-- [ ] Persist embeddings to local Chroma store.
+- [x] **Add embedding script** (`scripts/embed.py`):
+  - [x] Batch OpenAI API calls (batches of 100 chunks).
+  - [x] Model: `text-embedding-3-small` (1536 dimensions).
+  - [x] Token truncation at 8191 (API limit); 1 chunk exceeds this and will be truncated.
+- [x] **Orchestrate pipeline** (`scripts/pipeline.py`):
+  - [x] Load JSONL → build PQL dict → chunk → embed → upsert into Chroma at `data/chroma/`.
+  - [x] Chroma collection: `pql_docs`, cosine similarity, local persistent store.
 - [ ] Add idempotent re-run behavior (skip unchanged by content hash).
 - [ ] Add quick retrieval smoke test (`top-k` by sample query).
 
@@ -139,17 +145,28 @@ Mark tasks as done when completed.
 
 ## Environment Checklist
 
-- [ ] `OPENAI_API_KEY` configured
+- [x] `OPENAI_API_KEY` configured (required for embedding pipeline)
 
-## Runbook (Current)
+## Runbook (v1 Ingestion Complete)
 
-- [x] Scrape PQL docs:
-
+### Scrape PQL docs (already done, 291 pages in `data/scrape/pql_docs.jsonl`)
 ```bash
 python scripts/scrape_docs.py
 ```
 
-- [ ] Build chunk dataset
-- [ ] Build embeddings/vector store
-- [ ] Launch CLI runtime
+### Build embeddings and vector store (new)
+```bash
+export OPENAI_API_KEY=sk-...
+uv run python scripts/pipeline.py
+```
+This will:
+1. Load 291 pages from `data/scrape/pql_docs.jsonl`
+2. Build a PQL function dictionary (701 identifiers)
+3. Chunk pages using the three-tier strategy → 598 chunks
+4. Embed with OpenAI `text-embedding-3-small`
+5. Upsert into Chroma at `data/chroma/pql_docs`
+6. Print summary: elapsed time, total chunks stored
+
+**Next steps:**
+- [ ] Launch CLI runtime (retriever + prompt + generator + validator)
 - [ ] Launch Streamlit app

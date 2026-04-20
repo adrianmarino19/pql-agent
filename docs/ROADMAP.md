@@ -15,6 +15,7 @@ Mark tasks as done when completed.
 - [x] Scraper parallelized for speed (`--workers`).
 - [x] Scraper scope fixed to PQL docs only (`taxonomy_celonis_pql`).
 - [x] Scraped text cleanup added (removed nav/feedback boilerplate and `\n` in `full_content`).
+- [x] **Chunking strategy revised** — structure-first greedy accumulator replacing the old 2048-token tier approach.
 - [x] **Ingestion pipeline complete** (chunk + embed + vector store).
 - [ ] Runtime query assistant (retrieval + prompt + generation) not implemented yet.
 
@@ -47,13 +48,17 @@ Mark tasks as done when completed.
 ### 4) Chunking
 
 - [x] **Implement chunker module** (`scripts/chunk.py`):
-  - [x] Three-tier logic: Tier 1/2 (≤2048 tokens) → single `full` chunk; Tier 3 (>2048) → split on sequential `[n]` markers.
-  - [x] Separate `description_syntax` and `example` chunks for Tier 3.
+  - [x] Structure-first four-case logic (see `docs/CHUNKING_STRATEGY.md`):
+    - Pages ≤ 600 tokens → single `full` chunk.
+    - Pages > 600 tokens, no `[n]` markers → single `full` chunk (no structural signal).
+    - Pages > 600 tokens, has `[n]` markers → `description_syntax` chunk + greedy example chunks (target 400 tokens each).
+    - No `Syntax` block → single `concept` chunk.
+  - [x] `description_syntax` always its own isolated chunk — keeps "what does X do?" retrieval clean.
+  - [x] Greedy accumulator for examples: packs consecutive `[n]` blocks up to 400 tokens; oversized single examples kept as-is.
   - [x] PQL dictionary normalization: `MATCH_PROCESS_REGEX` → `match process regex` before embedding (improves tokenization).
-  - [x] Concept pages (no `Syntax` block) → single `chunk_type: concept`.
   - [x] Sequential marker validation to skip false positives (`[1904]` inside example text).
-  - [x] Chunk metadata: `chunk_id` (SHA256 hash of url+chunk_type+example_index), `url`, `title`, `term_name`, `chunk_type`, `example_index`, `word_count`, `token_count`, `text`.
-  - Result: **598 chunks** from 291 pages (65 concept, 188 full, 38 description_syntax, 307 example).
+  - [x] Chunk metadata: `chunk_id` (SHA256 hash of url+chunk_type+example_index_start), `url`, `title`, `term_name`, `chunk_type`, `example_index_start`, `example_index_end`, `word_count`, `token_count`, `text`.
+  - Result: **821 chunks** from 291 pages (65 concept, 106 full, 120 description_syntax, 530 example).
 
 ### 5) Embedding + Vector Store
 
@@ -137,7 +142,7 @@ Mark tasks as done when completed.
 
 ### 3) Iteration Roadmap
 
-- [ ] Improve chunking based on observed failures.
+- [ ] Improve chunking based on observed failures (next candidate: sliding window for large concept pages).
 - [ ] Add few-shot examples for high-frequency intents.
 - [ ] Add hybrid search (dense + keyword) if pure semantic search feels noisy.
 - [ ] Add syntax-aware validator (later stage).
@@ -162,7 +167,7 @@ uv run python scripts/pipeline.py
 This will:
 1. Load 291 pages from `data/scrape/pql_docs.jsonl`
 2. Build a PQL function dictionary (701 identifiers)
-3. Chunk pages using the three-tier strategy → 598 chunks
+3. Chunk pages using the structure-first greedy strategy → 821 chunks
 4. Embed with OpenAI `text-embedding-3-small`
 5. Upsert into Chroma at `data/chroma/pql_docs`
 6. Print summary: elapsed time, total chunks stored

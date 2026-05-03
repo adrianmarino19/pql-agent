@@ -50,8 +50,13 @@ def main() -> None:
     vectors = embed_chunks(all_chunks)
     print(f"  {len(vectors)} vectors")
 
-    print("Upserting into Chroma...")
+    print("Rebuilding Chroma collection...")
     client = chromadb.PersistentClient(path=CHROMA_PATH)
+    try:
+        client.delete_collection(COLLECTION_NAME)
+    except ValueError:
+        pass
+
     collection = client.get_or_create_collection(
         COLLECTION_NAME,
         metadata={"hnsw:space": "cosine"},

@@ -33,4 +33,3 @@ def validate_answer(answer: Answer, results: list[RetrievalResult]) -> Validatio
         warnings.append(f"query references PQL calls not represented by retrieved term metadata: {uncited_terms}")
 
     return ValidationResult(status="warned" if warnings else "passed", warnings=warnings)
-

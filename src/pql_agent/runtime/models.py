@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -13,3 +14,11 @@ class ValidationResult:
     status: str
     warnings: list[str]
 
+
+@dataclass
+class ToolCallTrace:
+    tool_name: str
+    query: str
+    k: int
+    retrieved_chunk_ids: list[str]
+    results: list[dict[str, Any]]

@@ -14,7 +14,7 @@ Each assistant turn produces exactly one JSONL row. The row captures everything 
   "question": "user message string",
   "conversation_history": [{"role": "user|assistant", "content": "..."}],
   "tool_calls": [
-    {"query": "rewritten search string", "k": 5, "retrieved_chunk_ids": ["..."]}
+    {"tool_name": "retrieve_pql_docs", "query": "rewritten search string", "k": 5, "retrieved_chunk_ids": ["..."], "retrieval_titles": ["..."]}
   ],
   "retrieved_chunk_ids": ["union of all tool_calls' chunk_ids"],
   "retrieval_titles": ["..."],

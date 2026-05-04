@@ -6,18 +6,20 @@ Today `answer_question()` is a fixed linear pipeline: `retrieve → prompt → g
 
 ## Shape
 
-OpenAI tool-calling loop. The model is given one tool:
+OpenAI Responses API tool-calling loop. The model is given one tool:
 
 - `retrieve_pql_docs(query: string, k: integer = 5)` — will wrap the existing `retrieve()` from `src/pql_agent/retrieval/retrieve.py`. Returns the same `RetrievalResult` list, serialized.
 
 Loop:
 
 1. Build messages = system prompt + full chat history (user + assistant turns) + current user message.
-2. Call the model with `tools=[retrieve_pql_docs]`.
+2. Call the model with `client.responses.create(..., tools=[retrieve_pql_docs])`.
 3. If the response includes tool calls: execute each, append the tool result messages, loop. Cap at 3 retrievals per turn.
 4. When the model returns a final assistant message, parse it as the existing JSON contract (`query`, `explanation`, `cited_chunks`).
 5. Validate (existing `validate_answer`).
 6. Log (see `LOGGING_AND_FEEDBACK.md`).
+
+History is passed explicitly by the caller as prior `{role, content}` chat messages. The runtime stays stateless; Streamlit owns chat state and the CLI passes an empty history.
 
 ## System prompt changes
 
@@ -31,7 +33,7 @@ Loop:
 
 ## CLI parity
 
-`main.py ask` keeps working. It runs a single-turn conversation through the same loop with an empty history.
+`main.py ask` keeps working. It runs a single-turn conversation through the same loop with an empty explicit history.
 
 ## Files touched
 

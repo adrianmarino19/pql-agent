@@ -1,5 +1,45 @@
 ## PQL Agent
 
+### Ask for grounded PQL
+
+The runtime CLI retrieves relevant documentation chunks, asks the model for a
+structured answer, validates the result, and appends a JSONL log entry.
+
+```bash
+uv run python main.py ask "count cases where activity A happened before activity B"
+```
+
+Optional schema context can be provided inline or from a file:
+
+```bash
+uv run python main.py ask "count completed orders by region" \
+  --schema '"Orders"."region", "Orders"."status", "Orders"."case_id"'
+
+uv run python main.py ask "count completed orders by region" --schema-file schema.txt
+```
+
+The response shape is:
+
+```json
+{
+  "query": "...",
+  "explanation": "...",
+  "cited_chunks": ["..."],
+  "validation": {
+    "status": "passed",
+    "warnings": []
+  }
+}
+```
+
+### Retrieve docs
+
+To inspect retrieval without generation:
+
+```bash
+uv run python main.py retrieve "MATCH_PROCESS_REGEX" --top-k 3
+```
+
 ### Scrape docs
 
 The scraper discovers pages from the sidebar of:

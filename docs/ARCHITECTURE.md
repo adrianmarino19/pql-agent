@@ -99,7 +99,7 @@ inject docs + output contract
     |
     v
 LLM
-draft query + explanation + assumptions
+draft query + explanation + citations
     |
     v
 Validator
@@ -118,11 +118,9 @@ The model should return structured output with:
 
 - `query`
 - `explanation`
-- `assumptions`
-- `missing_context`
 - `cited_chunks`
 
-This is better than a single free-form answer because it forces the model to separate what it knows from what it is assuming.
+This is better than a single free-form answer because it keeps the generated query, explanation, and supporting documentation references separately inspectable.
 
 ## Retrieval Strategy
 
@@ -150,7 +148,7 @@ Recommended prompt behavior:
 - Use only the supplied documentation context.
 - Do not invent functions or arguments.
 - If the question requires schema knowledge or business definitions not present in the docs, state the missing inputs explicitly.
-- If multiple formulations are possible, give the safest one and name the assumption.
+- If multiple formulations are possible, give the safest one and briefly explain the choice.
 - Prefer short, valid output over clever output.
 
 ### Suggested response contract
@@ -165,9 +163,7 @@ Do not invent PQL syntax, functions, or parameters.
 Return:
 1. A PQL query
 2. A short explanation
-3. Explicit assumptions
-4. Missing context, if any
-5. The chunk IDs you relied on
+3. The chunk IDs you relied on
 ```
 
 That one change alone will reduce ungrounded answers.
@@ -181,7 +177,6 @@ Even a lightweight validator will improve reliability a lot. v1 does not need a 
 - whether the output is empty,
 - whether referenced functions appear in retrieved docs,
 - whether the response includes unresolved placeholders,
-- whether the model admitted missing context,
 - whether output format is valid.
 
 Later, validation can evolve into:
@@ -204,8 +199,6 @@ Recommended columns:
 | `retrieved_chunk_ids` | Chunk IDs used |
 | `retrieval_titles` | Human-readable chunk titles |
 | `generated_query` | Final query shown to user |
-| `assumptions` | Assumptions surfaced by the model |
-| `missing_context` | Missing schema/business context |
 | `model` | Model used |
 | `user_feedback` | Optional thumbs up/down later |
 | `validation_status` | Passed / warned / failed |
@@ -262,7 +255,7 @@ The right v1 is:
 - ingest the docs,
 - retrieve relevant chunks,
 - generate grounded queries,
-- return assumptions and missing context,
+- return explanations and citations,
 - log enough metadata to inspect failures,
 - manually review outputs before claiming "valid PQL".
 
@@ -291,7 +284,7 @@ The idea is good. It is focused, data-grounded, and much more credible than a ge
 The edits I wanted to make were mostly about rigor:
 
 - add a validation layer,
-- force explicit assumptions and missing context,
+- keep outputs grounded and citation-backed,
 - make logging useful for evaluation,
 - avoid overclaiming correctness,
 - align the proposed repo shape with where the project actually is.

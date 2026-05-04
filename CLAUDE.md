@@ -15,6 +15,12 @@ PQL Agent is a retrieval-augmented generation (RAG) assistant that converts natu
 ## Key Commands
 
 ```bash
+# Generate grounded PQL from a natural-language request
+uv run python main.py ask "count cases where activity A happened before activity B"
+
+# Inspect retrieval only
+uv run python main.py retrieve "MATCH_PROCESS_REGEX" --top-k 3
+
 # Scrape PQL docs (outputs JSONL to data/scrape/pql_docs.jsonl)
 uv run python scripts/scrape_docs.py
 
@@ -33,12 +39,15 @@ The system has three planned loops (only ingestion phase 1 is implemented):
 ### Current State
 
 - `scripts/scrape_docs.py` — Complete. Parallel scraper that discovers PQL pages from the Celonis docs sidebar, fetches them with retry/backoff, extracts clean text, and writes JSONL.
-- `main.py` — Placeholder entry point.
-- Chunking, embedding, retrieval, generation, and validation are not yet implemented.
+- `scripts/chunk.py` — Complete. Builds PQL-aware chunks with `term_name`, `chunk_type`, and stable chunk IDs.
+- `scripts/embed.py` and `scripts/pipeline.py` — Complete. Embed chunks with OpenAI and persist them in Chroma.
+- `scripts/retrieve.py` — Complete. Retrieves top-k chunks with dense search and exact-term boosting.
+- `scripts/answer.py` — Initial runtime. Retrieves chunks, builds a grounded prompt, calls the OpenAI chat model, validates the structured response, and logs JSONL records.
+- `main.py` — CLI entry point with `retrieve` and `ask` subcommands.
 
 ### Planned Structure (from docs/ARCHITECTURE.md)
 
-Code will be organized under `src/pql_agent/` with separate packages for `ingest/`, `runtime/`, `app/`, and `logging/`. The runtime must return structured output: `query`, `explanation`, `assumptions`, `missing_context`, `cited_chunks`. Chunk metadata now includes `term_name` for named PQL constructs when derivable from syntax or a strict title heuristic.
+Code will be organized under `src/pql_agent/` with separate packages for `ingest/`, `runtime/`, `app/`, and `logging/`. The runtime must return structured output: `query`, `explanation`, `cited_chunks`. Chunk metadata now includes `term_name` for named PQL constructs when derivable from syntax or a strict title heuristic.
 
 ### Design Constraints
 

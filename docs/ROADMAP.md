@@ -16,7 +16,7 @@ Mark tasks as done when completed.
 - [x] Scraper scope fixed to PQL docs only (`taxonomy_celonis_pql`).
 - [x] Scraped text cleanup added (removed nav/feedback boilerplate and `\n` in `full_content`).
 - [x] **Ingestion pipeline complete** (chunk + embed + vector store).
-- [ ] Runtime query assistant (retrieval + prompt + generation) not implemented yet.
+- [x] Runtime CLI implemented for retrieval + prompt + generation + validation + local logging.
 
 ## Phase 1 — Ingestion
 
@@ -65,64 +65,68 @@ Mark tasks as done when completed.
   - [x] Load JSONL → build PQL dict → chunk → embed → upsert into Chroma at `data/chroma/`.
   - [x] Chroma collection: `pql_docs`, cosine similarity, local persistent store.
 - [ ] Add idempotent re-run behavior (skip unchanged by content hash).
-- [ ] Add quick retrieval smoke test (`top-k` by sample query).
+- [x] Add quick retrieval smoke test (`top-k` by sample query).
 
 ## Phase 2 — Runtime Assistant
 
 ### 1) Retrieval
 
-- [ ] Implement retriever module: query embed -> Chroma similarity search.
-- [ ] Return top-k chunks + chunk metadata.
-- [ ] Add tuning knobs (`k`, score threshold).
-- [ ] Add keyword fallback for exact PQL term matches (via Chroma `where` filters on `term_name` metadata).
+- [x] Implement retriever module: query embed -> Chroma similarity search.
+- [x] Return top-k chunks + chunk metadata.
+- [ ] Add score threshold.
+- [x] Add keyword fallback for exact PQL term matches (via Chroma `where` filters on `term_name` metadata).
 
 ### 2) CLI runtime (before UI)
 
-- [ ] Build CLI script: takes a natural-language question, prints structured response.
-- [ ] Use CLI to iterate on prompt and retrieval quality before building UI.
+- [x] Build CLI script: takes a natural-language question, prints structured response.
+- [x] Use CLI to iterate on prompt and retrieval quality before building UI.
 
 ### 3) Prompting + Generation
 
-- [ ] Implement prompt builder with strict grounding instructions.
-- [ ] Require output contract:
+- [x] Implement prompt builder with strict grounding instructions.
+- [x] Require output contract:
   - `query`
   - `explanation`
-  - `assumptions`
-  - `missing_context`
   - `cited_chunks`
-- [ ] Integrate OpenAI chat model call.
+- [x] Integrate OpenAI chat model call.
 
 ### 4) Schema Context Input
 
-- [ ] Allow user to provide table/column schema as input (e.g. paste schema text).
-- [ ] Inject schema context into prompt alongside retrieved chunks.
-- [ ] When schema is missing and required, surface it in `missing_context`.
+- [x] Allow user to provide table/column schema as input (e.g. paste schema text).
+- [x] Inject schema context into prompt alongside retrieved chunks.
+- [x] When schema is missing and required, state that clearly in the explanation.
 
 ### 5) Validation Layer
 
-- [ ] Add lightweight response checks:
+- [x] Add lightweight response checks:
   - non-empty query
   - output format valid
   - cited chunks present
   - referenced functions appear in retrieved docs
   - flag unresolved placeholders
-- [ ] Add warning path when context is insufficient.
+- [x] Add warning path for validation issues.
 
 ### 6) UI
 
 - [ ] Build Streamlit app for ask -> retrieve -> generate flow.
-- [ ] Show generated query + explanation + assumptions.
+- [ ] Show generated query + explanation.
 - [ ] Show cited documentation chunks to user.
+- [ ] v1 frontend design and execution split across per-workstream docs:
+  - `V1_OVERVIEW.md`
+  - `AGENTIC_RUNTIME.md`
+  - `CHAT_UI.md`
+  - `LOGGING_AND_FEEDBACK.md`
+  - `DEPLOYMENT.md`
+  - `ITERATION_WORKFLOW.md`
 
 ## Phase 3 — Logging, Evaluation, Iteration
 
 ### 1) Logging
 
-- [ ] Add query logging sink (local JSONL or SQLite).
-- [ ] Log fields:
+- [x] Add query logging sink (local JSONL or SQLite).
+- [x] Log fields:
   - `timestamp`, `session_id`, `question`
   - `retrieved_chunk_ids`, `retrieval_titles`, `generated_query`
-  - `assumptions`, `missing_context`
   - `model`, `validation_status`
   - `user_feedback` (optional thumbs up/down)
 
@@ -167,6 +171,18 @@ This will:
 5. Upsert into Chroma at `data/chroma/pql_docs`
 6. Print summary: elapsed time, total chunks stored
 
+### Ask PQL assistant
+```bash
+uv run python main.py ask "count cases where activity A happened before activity B"
+```
+
+This will:
+1. Retrieve the top documentation chunks from Chroma
+2. Build a strict grounded prompt
+3. Generate structured JSON with `query`, `explanation`, and `cited_chunks`
+4. Run lightweight validation
+5. Append a local JSONL log entry at `data/logs/queries.jsonl`
+
 **Next steps:**
-- [ ] Launch CLI runtime (retriever + prompt + generator + validator)
+- [ ] Add score threshold tuning to retrieval
 - [ ] Launch Streamlit app

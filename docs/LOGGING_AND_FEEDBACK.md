@@ -40,5 +40,5 @@ Recommend in-place for simplicity at v1 scale.
 
 ## Files touched
 
-- `scripts/answer.py` — extend `_log_run` to include the new fields.
+- `src/pql_agent/runtime/logging.py` — extend turn logging to include the new fields.
 - New: `app/feedback.py` — write thumbs to the matching JSONL row.

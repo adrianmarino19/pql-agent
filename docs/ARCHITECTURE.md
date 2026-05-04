@@ -207,20 +207,41 @@ This log is your evaluation dataset. Without retrieval metadata and validation o
 
 ## Repository Structure
 
-For v1, the structure prioritizes simplicity over premature abstraction:
+For v1, product code lives in an importable package. The top-level scripts are
+thin compatibility wrappers for command-line usage.
 
 ```text
 pql-agent/
+├── src/
+│   └── pql_agent/
+│       ├── cli.py
+│       ├── config.py
+│       ├── ingestion/
+│       │   ├── scrape.py
+│       │   ├── chunk.py
+│       │   └── pipeline.py
+│       ├── retrieval/
+│       │   ├── chroma.py
+│       │   ├── embeddings.py
+│       │   └── retrieve.py
+│       └── runtime/
+│           ├── agent.py
+│           ├── prompts.py
+│           ├── models.py
+│           ├── validation.py
+│           └── logging.py
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── CHUNKING_STRATEGY.md
 │   ├── ROADMAP.md
 │   └── VECTOR_DB.md
 ├── scripts/
-│   ├── scrape_docs.py      # ✓ implemented
-│   ├── chunk.py            # ✓ implemented
-│   ├── embed.py            # ✓ implemented
-│   └── pipeline.py         # ✓ implemented (ingestion orchestrator)
+│   ├── scrape_docs.py      # thin wrapper
+│   ├── chunk.py            # thin compatibility import
+│   ├── embed.py            # thin compatibility import
+│   ├── retrieve.py         # thin wrapper
+│   ├── answer.py           # thin wrapper
+│   └── pipeline.py         # thin wrapper
 ├── data/
 │   ├── scrape/
 │   │   └── pql_docs.jsonl  # ✓ 291 pages, 200 functions
@@ -230,10 +251,12 @@ pql-agent/
 │   └── corpus_analysis.ipynb
 ├── pyproject.toml
 ├── README.md
-└── main.py                 # ← stub; runtime CLI goes here later
+└── main.py                 # compatibility shim to pql_agent.cli
 ```
 
-This layout keeps ingestion concerns in `scripts/` during the build phase. Runtime code (retriever, prompt, generator, validator) will move into `main.py` or a `scripts/runtime/` module once v1 retrieval is working.
+This layout separates ingestion, retrieval, runtime, and presentation adapters.
+That gives the upcoming agentic loop a clear home in `pql_agent.runtime` without
+mixing it with Chroma setup, scraping, or Streamlit code.
 
 ## Recommended Stack
 

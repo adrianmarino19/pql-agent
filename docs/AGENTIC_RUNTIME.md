@@ -8,7 +8,7 @@ Today `answer_question()` is a fixed linear pipeline: `retrieve → prompt → g
 
 OpenAI tool-calling loop. The model is given one tool:
 
-- `retrieve_pql_docs(query: string, k: integer = 5)` — wraps the existing `retrieve()` from `scripts/retrieve.py`. Returns the same `RetrievalResult` list, serialized.
+- `retrieve_pql_docs(query: string, k: integer = 5)` — will wrap the existing `retrieve()` from `src/pql_agent/retrieval/retrieve.py`. Returns the same `RetrievalResult` list, serialized.
 
 Loop:
 
@@ -35,8 +35,9 @@ Loop:
 
 ## Files touched
 
-- `scripts/answer.py` — main refactor.
-- `scripts/retrieve.py` — no behavior change; expose a small adapter that produces JSON-serializable output for the tool result.
+- `src/pql_agent/runtime/agent.py` — main refactor.
+- `src/pql_agent/retrieval/retrieve.py` — no behavior change.
+- `src/pql_agent/retrieval/tools.py` — future adapter that produces JSON-serializable output for the tool result.
 - `main.py` — adjust call site if signature changes.
 
 ## Risks

@@ -23,7 +23,7 @@ Implemented in the UI (see `CHAT_UI.md`). No server-side rate limiting; this is 
 
 ## Updating the deployment
 
-- Add docs / change chunking → run `uv run python scripts/pipeline.py` locally → commit `data/chroma/` → push → Streamlit Cloud auto-redeploys.
+- Add docs / change chunking → run `uv run pql-agent pipeline` locally → commit `data/chroma/` → push → Streamlit Cloud auto-redeploys.
 
 ## Risks / known gaps
 

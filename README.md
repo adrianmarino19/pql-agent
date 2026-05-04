@@ -9,6 +9,12 @@ structured answer, validates the result, and appends a JSONL log entry.
 uv run python main.py ask "count cases where activity A happened before activity B"
 ```
 
+Or use the installed console entrypoint:
+
+```bash
+uv run pql-agent ask "count cases where activity A happened before activity B"
+```
+
 Optional schema context can be provided inline or from a file:
 
 ```bash
@@ -49,16 +55,16 @@ The scraper discovers pages from the sidebar of:
 It then fetches those pages in order, includes `comments.html`, and writes JSONL output with cleaned `full_content` ready for embedding.
 
 ```bash
-python scripts/scrape_docs.py
+uv run python scripts/scrape_docs.py
 ```
 
 Useful options:
 
 ```bash
-python scripts/scrape_docs.py --out data/scrape/pql_docs.jsonl --workers 8 --delay 0.1 --timeout 20 --max-pages 10
+uv run python scripts/scrape_docs.py --out data/scrape/pql_docs.jsonl --workers 8 --delay 0.1 --timeout 20 --max-pages 10
 
 # Also archive raw HTML for reproducible re-parsing:
-python scripts/scrape_docs.py --raw-dir data/raw/
+uv run python scripts/scrape_docs.py --raw-dir data/raw/
 ```
 
 Each JSONL record includes:

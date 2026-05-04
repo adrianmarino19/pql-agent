@@ -1,29 +1,9 @@
-import tiktoken
-from dotenv import load_dotenv
-from openai import OpenAI
+import sys
+from pathlib import Path
 
-load_dotenv()
-_client = OpenAI()
-_enc = tiktoken.get_encoding("cl100k_base")
-MAX_EMBED_TOKENS = 8191
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from pql_agent.retrieval.embeddings import embed_chunks
 
-def _truncate(text: str) -> str:
-    tokens = _enc.encode(text)
-    if len(tokens) <= MAX_EMBED_TOKENS:
-        return text
-    return _enc.decode(tokens[:MAX_EMBED_TOKENS])
+__all__ = ["embed_chunks"]
 
-
-def embed_chunks(chunks: list[dict], model: str = "text-embedding-3-small") -> list[list[float]]:
-    texts = [_truncate(c["text"]) for c in chunks]
-    vectors: list[list[float]] = []
-    batch_size = 100
-
-    for i in range(0, len(texts), batch_size):
-        batch = texts[i : i + batch_size]
-        response = _client.embeddings.create(model=model, input=batch)
-        batch_vectors = [item.embedding for item in sorted(response.data, key=lambda x: x.index)]
-        vectors.extend(batch_vectors)
-
-    return vectors

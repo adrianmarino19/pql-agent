@@ -304,9 +304,10 @@ def answer_question(
     )
     results = _merge_retrieval_results(tool_calls)
     validation = validate_answer(answer, results)
+    log_row_id = None
 
     if log_path is not None:
-        log_run(
+        log_row_id = log_run(
             log_path,
             session_id,
             question,
@@ -323,6 +324,7 @@ def answer_question(
         **asdict(answer),
         "session_id": session_id,
         "turn_index": resolved_turn_index,
+        "log_row_id": log_row_id,
         "validation": asdict(validation),
         "tool_calls": [_tool_call_trace_for_output(tool_call) for tool_call in tool_calls],
         "retrieved_chunks": [
@@ -332,6 +334,7 @@ def answer_question(
                 "term_name": result.term_name,
                 "chunk_type": result.chunk_type,
                 "url": result.url,
+                "text": result.text,
                 "similarity": result.similarity,
                 "boosted_similarity": result.boosted_similarity,
             }

@@ -5,6 +5,18 @@
 The runtime CLI retrieves relevant documentation chunks, asks the model for a
 structured answer, validates the result, and appends a JSONL log entry.
 
+### Run the chat UI
+
+The Streamlit frontend uses the same agentic runtime and writes each assistant
+turn to `data/logs/queries.jsonl`.
+
+```bash
+uv run streamlit run app/streamlit_app.py
+```
+
+Set `OPENAI_API_KEY` in your environment for local runs, or in Streamlit
+Community Cloud secrets for deployment.
+
 ```bash
 uv run python main.py ask "count cases where activity A happened before activity B"
 ```

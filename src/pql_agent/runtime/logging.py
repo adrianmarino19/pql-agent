@@ -2,6 +2,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from pql_agent.retrieval.retrieve import RetrievalResult
 from pql_agent.runtime.models import Answer, ValidationResult
@@ -19,9 +20,11 @@ def log_run(
     turn_index: int | None = None,
     conversation_history: list[dict[str, str]] | None = None,
     tool_calls: list[dict[str, Any]] | None = None,
-) -> None:
+) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
+    row_id = str(uuid4())
     record: dict[str, Any] = {
+        "row_id": row_id,
         "timestamp": datetime.now(UTC).isoformat(),
         "session_id": session_id,
         "turn_index": turn_index,
@@ -40,3 +43,4 @@ def log_run(
     }
     with path.open("a") as f:
         f.write(json.dumps(record) + "\n")
+    return row_id
